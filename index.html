@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEON CYBER - AI Arena</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Courier New', monospace;
+        }
+
+        body {
+            background: #0a0a12;
+            min-height: 100vh;
+            padding: 20px;
+            color: #00ffea;
+            overflow-x: hidden;
+        }
+
+        /* Animated background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(120, 0, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 0, 128, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(0, 255, 234, 0.05) 0%, transparent 50%);
+            z-index: -1;
+        }
+
+        .scan-line {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #00ffea, transparent);
+            animation: scan 3s linear infinite;
+            z-index: -1;
+        }
+
+        @keyframes scan {
+            0% { top: 0%; }
+            100% { top: 100%; }
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: rgba(10, 15, 30, 0.9);
+            border-radius: 0;
+            padding: 30px;
+            box-shadow: 
+                0 0 50px rgba(0, 255, 234, 0.2),
+                inset 0 0 50px rgba(0, 255, 234, 0.1);
+            border: 1px solid #00ffea;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Grid overlay */
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(0, 255, 234, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 234, 0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+            pointer-events: none;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #00ffea;
+            position: relative;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 25%;
+            width: 50%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #00ffea, #ff00aa, #00ffea, transparent);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        .header h1 {
+            font-size: 3em;
+            background: linear-gradient(45deg, #00ffea, #ff00aa, #7700ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(0, 255, 234, 0.5);
+            margin-bottom: 10px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        .header p {
+            color: #88ffff;
+            font-size: 1.2em;
+            text-shadow: 0 0 10px rgba(0, 255, 234, 0.5);
+        }
+
+        .game-area {
+            display: grid;
+            grid-template-columns: 600px 350px;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .arena {
+            background: #000015;
+            border: 2px solid #00ffea;
+            border-radius: 0;
+            width: 600px;
+            height: 450px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 
+                inset 0 0 50px rgba(0, 255, 234, 0.1),
+                0 0 30px rgba(0, 255, 234, 0.3);
+        }
+
+        /* Arena grid */
+        .arena::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(0, 255, 234, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 234, 0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        #myRobot {
+            width: 40px;
+            height: 40px;
+            background: radial-gradient(circle, #ff00aa, #ff0066);
+            border-radius: 50%;
+            position: absolute;
+            left: 50px;
+            top: 50px;
+            box-shadow: 
+                0 0 20px #ff00aa,
+                0 0 40px rgba(255, 0, 170, 0.5);
+            border: 2px solid #ff88dd;
+            transition: all 0.2s ease;
+        }
+
+        #enemy {
+            width: 40px;
+            height: 40px;
+            background: radial-gradient(circle, #00ffea, #00aaff);
+            border-radius: 50%;
+            position: absolute;
+            left: 400px;
+            top: 250px;
+            box-shadow: 
+                0 0 20px #00ffea,
+                0 0 40px rgba(0, 255, 234, 0.5);
+            border: 2px solid #88ffff;
+            transition: all 0.2s ease;
+        }
+
+        .controls {
+            background: rgba(5, 10, 25, 0.8);
+            padding: 25px;
+            border-radius: 0;
+            border: 1px solid #ff00aa;
+            box-shadow: 
+                inset 0 0 30px rgba(255, 0, 170, 0.1),
+                0 0 20px rgba(255, 0, 170, 0.2);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-box {
+            background: rgba(0, 20, 40, 0.8);
+            padding: 15px;
+            border-radius: 0;
+            text-align: center;
+            border: 1px solid #00ffea;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 234, 0.2), transparent);
+            animation: shine 3s infinite;
+        }
+
+        @keyframes shine {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #00ffea;
+            text-shadow: 0 0 15px rgba(0, 255, 234, 0.7);
+        }
+
+        .stat-box:nth-child(2) .stat-value {
+            color: #ff00aa;
+            text-shadow: 0 0 15px rgba(255, 0, 170, 0.7);
+        }
+
+        .program-area {
+            margin-bottom: 25px;
+        }
+
+        .program-area label {
+            display: block;
+            margin-bottom: 10px;
+            color: #00ffea;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        #commands {
+            width: 100%;
+            height: 120px;
+            background: #000015;
+            border: 1px solid #00ffea;
+            border-radius: 0;
+            color: #00ffea;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            padding: 15px;
+            resize: none;
+            box-shadow: inset 0 0 20px rgba(0, 255, 234, 0.1);
+        }
+
+        #commands:focus {
+            outline: none;
+            border-color: #ff00aa;
+            box-shadow: 
+                inset 0 0 20px rgba(0, 255, 234, 0.2),
+                0 0 10px rgba(255, 0, 170, 0.5);
+        }
+
+        .buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            background: linear-gradient(45deg, #001122, #003344);
+            border: 1px solid #00ffea;
+            padding: 15px;
+            border-radius: 0;
+            color: #00ffea;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 234, 0.4), transparent);
+            transition: left 0.5s;
+        }
+
+        button:hover::before {
+            left: 100%;
+        }
+
+        button:hover {
+            background: linear-gradient(45deg, #002244, #004466);
+            box-shadow: 
+                0 0 20px rgba(0, 255, 234, 0.5),
+                inset 0 0 20px rgba(0, 255, 234, 0.1);
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:nth-child(2) {
+            border-color: #ff00aa;
+            color: #ff00aa;
+        }
+
+        button:nth-child(2):hover {
+            box-shadow: 
+                0 0 20px rgba(255, 0, 170, 0.5),
+                inset 0 0 20px rgba(255, 0, 170, 0.1);
+        }
+
+        .how-to-play {
+            background: rgba(20, 0, 40, 0.8);
+            padding: 20px;
+            border-radius: 0;
+            border: 1px solid #7700ff;
+            margin-top: 20px;
+            box-shadow: inset 0 0 30px rgba(119, 0, 255, 0.1);
+        }
+
+        .how-to-play h3 {
+            color: #7700ff;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(119, 0, 255, 0.5);
+        }
+
+        .instructions {
+            font-family: 'Courier New', monospace;
+            line-height: 1.6;
+            color: #88ffff;
+        }
+
+        .instructions ol {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .instructions li {
+            margin-bottom: 8px;
+        }
+
+        .instructions code {
+            background: rgba(0, 255, 234, 0.1);
+            padding: 2px 6px;
+            border: 1px solid #00ffea;
+            color: #00ffea;
+        }
+
+        .example {
+            background: rgba(0, 10, 30, 0.8);
+            padding: 10px;
+            margin-top: 10px;
+            border: 1px solid #00ffea;
+        }
+
+        .game-over {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 5, 15, 0.95);
+            padding: 40px;
+            border-radius: 0;
+            text-align: center;
+            border: 2px solid #00ffea;
+            z-index: 100;
+            box-shadow: 0 0 50px rgba(0, 255, 234, 0.5);
+        }
+
+        .game-over h2 {
+            color: #00ffea;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px rgba(0, 255, 234, 0.7);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        .glow {
+            animation: glow 1s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from { text-shadow: 0 0 10px #00ffea, 0 0 20px #00ffea; }
+            to { text-shadow: 0 0 15px #00ffea, 0 0 30px #00ffea, 0 0 40px #00ffea; }
+        }
+    </style>
+</head>
+<body>
+    <div class="scan-line"></div>
+    
+    <div class="container">
+        <div class="header">
+            <h1>NEON CYBER</h1>
+            <p>SYSTEM ONLINE - PROGRAM YOUR CYBER-DROID</p>
+        </div>
+
+        <div class="game-area">
+            <div class="arena">
+                <div id="myRobot"></div>
+                <div id="enemy"></div>
+                <div id="gameOver" class="game-over">
+                    <h2 class="glow">TARGET NEUTRALIZED</h2>
+                    <p>System Credit: +100</p>
+                    <button onclick="resetGame()">REBOOT SYSTEM</button>
+                </div>
+            </div>
+
+            <div class="controls">
+                <div class="stats">
+                    <div class="stat-box">
+                        <div>CREDITS</div>
+                        <div class="stat-value" id="score">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div>HIGH SCORE</div>
+                        <div class="stat-value" id="bestScore">0</div>
+                    </div>
+                </div>
+
+                <div class="program-area">
+                    <label>CYBER COMMAND SEQUENCE:</label>
+                    <textarea id="commands">r
+r
+d
+d</textarea>
+                </div>
+
+                <div class="buttons">
+                    <button onclick="runProgram()">⚡ EXECUTE</button>
+                    <button onclick="clearProgram()">⏹️ ABORT & CLEAR</button>
+                </div>
+
+                <div class="how-to-play">
+                    <h3>HOW TO PLAY</h3>
+                    <div class="instructions">
+                        <ol>
+                            <li><strong>Program your cyber-droid</strong> using command codes:</li>
+                            <ul>
+                                <li><code>L</code> = Move Left</li>
+                                <li><code>R</code> = Move Right</li>
+                                <li><code>U</code> = Move Up</li>
+                                <li><code>D</code> = Move Down</li>
+                            </ul>
+                            <li><strong>Click EXECUTE</strong> to run your program</li>
+                            <li><strong>Catch the blue enemy</strong> to earn credits</li>
+                            <li><strong>Write smarter programs</strong> to beat your high score!</li>
+                        </ol>
+                        <div class="example">
+                            <strong>Example Program:</strong><br>
+                            <code>R<br>R<br>D<br>D<br>R<br>R</code>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game variables
+        let score = 0;
+        let bestScore = 0;
+        let isProgramRunning = false;
+        let programInterval;
+
+        // Move function - WITH PERFECT BOUNDARIES
+        function move(direction) {
+            const robot = document.getElementById("myRobot");
+            let x = parseInt(robot.style.left) || 50;
+            let y = parseInt(robot.style.top) || 50;
+            
+            const moveAmount = 30;
+            
+            if (direction === 'l') x -= moveAmount;
+            if (direction === 'r') x += moveAmount;
+            if (direction === 'u') y -= moveAmount;
+            if (direction === 'd') y += moveAmount;
+            
+            // PERFECT BOUNDARY CHECKING - FIXED!
+            // Arena width: 600px, Robot width: 40px
+            // So max x = 600 - 40 = 560px
+            // Arena height: 450px, Robot height: 40px
+            // So max y = 450 - 40 = 410px
+            if (x < 0) x = 0;
+            if (x > 560) x = 560;  // Perfect right boundary!
+            if (y < 0) y = 0;
+            if (y > 410) y = 410;  // Perfect bottom boundary!
+            
+            robot.style.left = x + "px";
+            robot.style.top = y + "px";
+            
+            checkWin();
+        }
+
+        // Run program function - WITH AUTO-CLEAR
+        function runProgram() {
+            if (isProgramRunning) return;
+            
+            const commandText = document.getElementById("commands").value;
+            const commands = commandText.split('\n');
+            
+            // Clear the command box immediately when Execute is clicked
+            document.getElementById("commands").value = "";
+            
+            isProgramRunning = true;
+            let currentIndex = 0;
+            
+            programInterval = setInterval(function() {
+                if (currentIndex >= commands.length) {
+                    stopProgram();
+                    return;
+                }
+                
+                const command = commands[currentIndex].trim().toLowerCase();
+                
+                if (command === 'l' || command === 'r' || command === 'u' || command === 'd') {
+                    move(command);
+                }
+                
+                currentIndex++;
+            }, 500);
+        }
+
+        // Stop program function
+        function stopProgram() {
+            isProgramRunning = false;
+            if (programInterval) {
+                clearInterval(programInterval);
+            }
+        }
+
+        // Clear program function (for the clear button)
+        function clearProgram() {
+            document.getElementById("commands").value = "";
+            stopProgram();
+        }
+
+        // Move enemy function - WITH SAME BOUNDARIES
+        function moveEnemy() {
+            const enemy = document.getElementById("enemy");
+            let x = parseInt(enemy.style.left) || 400;
+            let y = parseInt(enemy.style.top) || 250;
+            
+            const directions = ['l', 'r', 'u', 'd'];
+            const randomDir = directions[Math.floor(Math.random() * 4)];
+            const moveAmount = 25;
+            
+            if (randomDir === 'l') x -= moveAmount;
+            if (randomDir === 'r') x += moveAmount;
+            if (randomDir === 'u') y -= moveAmount;
+            if (randomDir === 'd') y += moveAmount;
+            
+            // SAME PERFECT BOUNDARIES FOR ENEMY
+            if (x < 0) x = 0;
+            if (x > 560) x = 560;  // Perfect right boundary!
+            if (y < 0) y = 0;
+            if (y > 410) y = 410;  // Perfect bottom boundary!
+            
+            enemy.style.left = x + "px";
+            enemy.style.top = y + "px";
+        }
+
+        // Check win function
+        function checkWin() {
+            const robot = document.getElementById("myRobot");
+            const enemy = document.getElementById("enemy");
+            
+            const rx = parseInt(robot.style.left);
+            const ry = parseInt(robot.style.top);
+            const ex = parseInt(enemy.style.left);
+            const ey = parseInt(enemy.style.top);
+            
+            if (Math.abs(rx - ex) < 40 && Math.abs(ry - ey) < 40) {
+                score++;
+                document.getElementById("score").textContent = score;
+                
+                if (score > bestScore) {
+                    bestScore = score;
+                    document.getElementById("bestScore").textContent = bestScore;
+                }
+                
+                // Move enemy to new random position WITHIN BOUNDARIES
+                enemy.style.left = Math.floor(Math.random() * 520) + "px";  // 560-40=520
+                enemy.style.top = Math.floor(Math.random() * 370) + "px";   // 410-40=370
+                
+                // Show victory effect
+                document.getElementById("gameOver").style.display = 'block';
+                setTimeout(() => {
+                    document.getElementById("gameOver").style.display = 'none';
+                }, 1500);
+            }
+        }
+
+        // Reset game function
+        function resetGame() {
+            score = 0;
+            document.getElementById("score").textContent = score;
+            document.getElementById("gameOver").style.display = 'none';
+            
+            // Reset positions
+            document.getElementById("myRobot").style.left = "50px";
+            document.getElementById("myRobot").style.top = "50px";
+            document.getElementById("enemy").style.left = "400px";
+            document.getElementById("enemy").style.top = "250px";
+        }
+
+        // Initialize game
+        window.onload = function() {
+            // Load best score from localStorage
+            const savedScore = localStorage.getItem('cyberBestScore');
+            if (savedScore) {
+                bestScore = parseInt(savedScore);
+                document.getElementById("bestScore").textContent = bestScore;
+            }
+            
+            // Start enemy movement
+            setInterval(moveEnemy, 800);
+        }
+
+        // Save best score when leaving
+        window.onbeforeunload = function() {
+            localStorage.setItem('cyberBestScore', bestScore);
+        }
+    </script>
+</body>
+</html>
